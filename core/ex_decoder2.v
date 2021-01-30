@@ -23,13 +23,13 @@
 //		  2. 将op和func提取出来，每种参与译码的状态单独作为一个wire变量以节省门的数量
 //		  3. 利用op和func初步译码，在利用指令的其他位置进一步译码
 //		  4. imm部分：
-					//1.先根据imm所处的位置和即将对imm做的操作，将所有指令的imm分一个大类
+					//1.先根据imm所处的位置和长度，将所有指令的imm分一个大类
 					//2.根据译出的指令控制信号选择相应的imm
 //		  5. 寄存器部分：
 					//1.根据指令格式将寄存器索引提取出来，32位较为简单，因为寄存器位置相对固定
 					//	  ，但是16位压缩指令就比较麻烦。
 					//2.根据译出的指令控制信号选择是否使用rs1，rs2和rd(给rs1,rs2和rd使能置位)
-//		  6. 信息总线部分：
+//		  6. 信息总线部分：该部分要根据ALU进行设计
 					//1.该部分主要是为了复用信息总线，解决信号线过多的问题
 					//2.除了imm和寄存器相关信号，其他均用信息总线传输
 					//3.module中的mul和jal等信号均是输出至ifu级的，alu运算控制信号均来自信息总线
@@ -55,7 +55,7 @@ output [`PC_Size-1:0] dec_pc,
 output dec_misalgn,
 output dec_buserr,
 
-//产生的控制信号
+//产生的控制信号，回传ifu
 output dec_ilegl,//表明该指令非法
 output dec_rv32,//表明该指令是否为32位
   
@@ -78,7 +78,6 @@ output [`E203_XLEN-1:0] dec_imm,//该指令使用的；立即数字段
 
 //mini_decoder，若输入输出接口改变记得更新mini_decoder
 ////输出至bpu,均为跳转相关
-output dec_rv32,
 output dec_ifj,
 output dec_jal,
 output dec_jalr,
@@ -93,7 +92,7 @@ output dec_mul   ,
 output dec_div   ,
 output dec_rem   ,
 output dec_divu  ,
-output dec_remu  ,
+output dec_remu  
 
 );
 
@@ -381,7 +380,7 @@ assign dec_mul    = rv32_mul;
 assign dec_div    = rv32_div ;
 assign dec_divu   = rv32_divu;
 assign dec_rem    = rv32_rem;
-assign dec_remu   = rv32_rem
+assign dec_remu   = rv32_rem;
 	//存储器存取指令
 wire rv32_lb       = rv32_load   & rv32_func3_000;
 wire rv32_lh       = rv32_load   & rv32_func3_001;
